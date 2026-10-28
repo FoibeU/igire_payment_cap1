@@ -1,5 +1,5 @@
-                                             IGIRE PAYMENT MANAGEMENT SYSTEM README FILE
-                                            --------------------------------------------
+ IGIRE PAYMENT MANAGEMENT SYSTEM README FILE
+ --------------------------------------------
 
 This is the Payment management system for IgirePay Technologies Ltd That aims to fix the duplication issue into the existing system, For this project I detailed it from my analyzing on the first time but during the time 
 of implementation, I focused only on the core function, I did focus on removing the duplication, and creating the report according to what you need. About what I learned during this period of project I can say 
@@ -12,7 +12,7 @@ step.
 How to run This project
 -----------------------
 
-1. To install pgadmin , you can use other but I recommend  you this one
+1. First install pgadmin  and good Text editor, you can use other but I recommend  you this one
 2. The connection is under util folder and the queries for creating table are under Database table
 3. The DB name is on those file you have to name as it is 
 
