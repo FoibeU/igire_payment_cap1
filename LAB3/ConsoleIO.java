@@ -13,13 +13,9 @@ import java.time.LocalDate;
 import java.time.format.DateTimeParseException;
 import java.util.List;
 
-/**
- * Keyboard input and table output for the console application.
- * Input errors throw ValidationException, so the menu shows a friendly message and continues.
- */
 public class ConsoleIO {
 
-    /** Thrown when the input stream ends (Ctrl+D / Ctrl+Z, or end of a scripted input file). */
+
     public static class EndOfInputException extends RuntimeException {
         private static final long serialVersionUID = 1L;
     }
@@ -56,7 +52,6 @@ public class ConsoleIO {
         return value;
     }
 
-    /** Reads a secret (PIN/password) without echo when a real terminal is available. */
     public String readSecret(String prompt) {
         if (systemConsole != null) {
             char[] secret = systemConsole.readPassword(prompt);

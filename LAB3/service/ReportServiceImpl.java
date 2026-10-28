@@ -21,10 +21,6 @@ import java.nio.file.Path;
 import java.time.LocalDate;
 import java.time.format.DateTimeFormatter;
 import java.util.List;
-
-/**
- * Reports: CSV export, daily summary and customer statements.
- */
 public class ReportServiceImpl implements ReportService {
 
     private static final DateTimeFormatter CSV_DATE_TIME = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss");
@@ -56,7 +52,7 @@ public class ReportServiceImpl implements ReportService {
                 Files.createDirectories(parent);
             }
             try (BufferedWriter writer = Files.newBufferedWriter(file, StandardCharsets.UTF_8)) {
-                writer.write('﻿'); // BOM, so Excel opens UTF-8 correctly
+                writer.write('﻿');
                 writer.write("transaction_id,timestamp,reference_id,account_id,transaction_type,direction,amount,description");
                 writer.newLine();
                 for (Transaction t : rows) {
@@ -101,8 +97,6 @@ public class ReportServiceImpl implements ReportService {
             return new CustomerStatement(customer, from, to, accounts, transactions);
         });
     }
-
-    /** Quotes a CSV text cell and neutralises spreadsheet formulas (CSV injection). */
     private String csvText(String value) {
         if (value == null) {
             return "";

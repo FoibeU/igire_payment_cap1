@@ -246,18 +246,18 @@ public class ConsoleApp {
     private void reportMenu() {
         while (true) {
             io.header("Reports");
-            io.println("1. Export transaction history to CSV");
+            io.println("1. Export transaction history to CSV(Not yet done) ");
             io.println("2. Daily transaction summary");
             io.println("3. Customer transaction statement");
             io.println("4. Failed transaction log (admin)");
-            io.println("5. In-memory records (Set of processed references, failed log of this session)");
+//            io.println("5. In-memory records (Set of processed references, failed log of this session)");
             io.println("0. Back");
             switch (io.readLine("Choose: ")) {
                 case "1" -> safely(this::exportCsv);
                 case "2" -> safely(this::dailySummary);
                 case "3" -> safely(this::customerStatement);
                 case "4" -> safely(this::failedLog);
-                case "5" -> safely(this::inMemoryRecords);
+//                case "5" -> safely(this::inMemoryRecords);
                 case "0" -> {
                     return;
                 }
