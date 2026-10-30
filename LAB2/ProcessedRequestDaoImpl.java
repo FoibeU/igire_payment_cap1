@@ -11,11 +11,7 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
 
-/**
- * JDBC implementation of ProcessedRequestDao.
- * create() uses INSERT ... ON CONFLICT DO NOTHING: the UNIQUE constraint on reference_id decides
- * atomically whether a request is new, even when two retries arrive at the same moment.
- */
+
 public class ProcessedRequestDaoImpl implements ProcessedRequestDao {
 
     private static final String INSERT_SQL = "INSERT INTO processed_requests (reference_id) VALUES (?) ON CONFLICT (reference_id) DO NOTHING";

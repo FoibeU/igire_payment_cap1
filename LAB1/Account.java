@@ -31,7 +31,6 @@ public abstract class Account {
     }
 
     protected Account(Long customerId) {
-
         this.customerId = customerId;
     }
 
@@ -43,7 +42,6 @@ public abstract class Account {
         this.createdAt = createdAt;
     }
 
-    /** Factory: creates the right subclass for a stored account_type. */
     public static Account of(AccountType type) {
         if (type == null) {
             throw new ValidationException("Account type is required.");
@@ -56,44 +54,37 @@ public abstract class Account {
 
     public abstract AccountType getAccountType();
 
-    // ===================================================== POLYMORPHIC OPERATIONS
-
-    /** Adds money. Subclasses may add rules (minimum deposit, balance cap) and then call super. */
     public void deposit(BigDecimal amount) {
         ensureActive();
         BigDecimal value = Money.requirePositive(amount);
         balance = balance.add(value);
     }
 
-    /** Takes money out, including any fee from {@link #calculateWithdrawalInterest}. Subclasses may add limits. */
-    public void withdraw(BigDecimal amount) {
+    public void withdraw(BigDecimal amount, TransactionType type) {
         ensureCanDebit();
         BigDecimal value = Money.requirePositive(amount);
-        BigDecimal total = value.add(calculateWithdrawalInterest(value));
+        BigDecimal fee = calculateFee(value, type);
+        BigDecimal total = value.add(fee);
         if (balance.compareTo(total) < 0) {
             throw new InsufficientBalanceException(id, balance, total);
         }
-        balance = balance.subtract(total);
+        balance = Money.round(balance.subtract(total));
     }
 
-    /** Fee charged on withdrawals and outgoing transfers. No fee by default. */
     public BigDecimal calculateWithdrawalInterest(BigDecimal amount) {
         return Money.round(BigDecimal.ZERO);
     }
 
-    /** Whether this account may send money to the target account. Any active account by default. */
+    protected BigDecimal calculateFee(BigDecimal amount, TransactionType type) {
+        return Money.round(calculateWithdrawalInterest(amount));
+    }
+
     public boolean canTransferTo(Account target) {
         return target != null && target.getStatus() == AccountStatus.ACTIVE;
     }
 
-    /** Whether transfers from this account are applied instantly. */
     public abstract boolean supportsInstantTransfer();
 
-    /**
-     * Applies one transaction request to this account and returns the ledger rows it produced
-     * (the main row, plus a FEE row when a fee was charged). The request must carry the reference ID,
-     * the type and the amount.
-     */
     public List<Transaction> processTransaction(Transaction request) {
         if (request == null || request.getTransactionType() == null) {
             throw new ValidationException("Transaction type is required.");
@@ -107,14 +98,15 @@ public abstract class Account {
                 rows.add(newEntry(request, type, amount, describe(request, type)));
             }
             case WITHDRAWAL, TRANSFER_OUT -> {
-                BigDecimal fee = calculateWithdrawalInterest(amount);
-                withdraw(amount);
+                BigDecimal fee = calculateFee(amount, type);   // same fee that withdraw() deducts
+                withdraw(amount, type);
                 rows.add(newEntry(request, type, amount, describe(request, type)));
                 if (fee.signum() > 0) {
                     rows.add(newEntry(request, TransactionType.FEE, fee, getAccountType() + " fee on " + type.getDescription().toLowerCase()));
                 }
             }
-            case FEE -> throw new ValidationException("FEE transactions are created automatically and cannot be requested.");
+            case FEE ->
+                    throw new ValidationException("FEE transactions are created automatically and cannot be requested.");
         }
         return rows;
     }
@@ -126,8 +118,6 @@ public abstract class Account {
     protected Transaction newEntry(Transaction request, TransactionType type, BigDecimal amount, String description) {
         return new Transaction(null, id, request.getReferenceId(), Money.round(amount), type, LocalDateTime.now(), description);
     }
-
-    // ===================================================== STATUS CHECKS
 
     protected void ensureActive() {
         if (status != AccountStatus.ACTIVE) {
@@ -142,7 +132,6 @@ public abstract class Account {
         }
     }
 
-    /** An account can be closed (made inactive) only when it is empty. */
     public void deactivate() {
         if (balance.signum() != 0) {
             throw new ValidationException("Account #" + id + " still has a balance of " + Money.format(balance) + ". Withdraw or transfer it before closing the account.");
@@ -154,13 +143,10 @@ public abstract class Account {
         status = AccountStatus.ACTIVE;
     }
 
-    // ===================================================== PIN (Lab 3.4)
-
     public boolean hasPin() {
         return pinHash != null && pinSalt != null;
     }
 
-    /** Creates or replaces the PIN (4 to 6 digits). Resets failed attempts. */
     public void setPin(String pin) {
         if (pin == null || !PIN_PATTERN.matcher(pin).matches()) {
             throw new InvalidPinException("PIN must be 4 to 6 digits.");
@@ -173,12 +159,6 @@ public abstract class Account {
         this.failedPinAttempts = 0;
     }
 
-    /**
-     * Checks the PIN. A wrong PIN increases the failed-attempt counter and locks the account
-     * after {@link #MAX_PIN_ATTEMPTS} attempts (bonus: account locking).
-     *
-     * @return true if the PIN is correct
-     */
     public boolean verifyPin(String pin) {
         if (locked) {
             throw new AccountLockedException(id);
@@ -206,15 +186,11 @@ public abstract class Account {
         failedPinAttempts = 0;
     }
 
-    // ===================================================== GETTERS / SETTERS
-
     public Long getId() {
-
         return id;
     }
 
     public void setId(Long id) {
-
         this.id = id;
     }
 
@@ -238,7 +214,6 @@ public abstract class Account {
         return balance;
     }
 
-    /** Used when loading from the database or restoring a rolled-back in-memory operation. */
     public void setBalance(BigDecimal balance) {
         if (balance == null || balance.signum() < 0) {
             throw new ValidationException("Balance cannot be empty or negative.");
@@ -310,10 +285,12 @@ public abstract class Account {
         return Objects.hashCode(id);
     }
 
-    /** Never includes the PIN hash or salt. */
     @Override
     public String toString() {
         String owner = customerName == null ? "customer " + customerId : customerName;
-        return "#" + id + " " + getAccountType() + " - " + owner + " (balance " + Money.format(balance) + (status == AccountStatus.INACTIVE ? ", INACTIVE" : "") + (locked ? ", LOCKED" : "") + ")";
+        return "#" + id + " " + getAccountType() + " - " + owner
+                + " (balance " + Money.format(balance)
+                + (status == AccountStatus.INACTIVE ? ", INACTIVE" : "")
+                + (locked ? ", LOCKED" : "") + ")";
     }
 }

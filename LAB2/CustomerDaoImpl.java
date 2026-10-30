@@ -12,10 +12,6 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
 
-/**
- * JDBC implementation of CustomerDao. Only PreparedStatements with ? parameters are used,
- * so user input is never concatenated into SQL (no SQL injection).
- */
 public class CustomerDaoImpl implements CustomerDao {
 
     private static final String COLUMNS = "SELECT id, full_name, email, phone_number FROM customers";

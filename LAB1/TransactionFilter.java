@@ -2,9 +2,6 @@ package LAB1;
 
 import java.time.LocalDate;
 
-/**
- * Search criteria for transactions (bonus: transaction search and filtering). Every field is optional.
- */
 public class TransactionFilter {
 
     private Long accountId;

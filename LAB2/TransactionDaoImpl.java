@@ -17,10 +17,6 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
 
-/**
- * JDBC implementation of TransactionDao for PostgreSQL.
- * The search query is built from fixed SQL fragments; every user value is bound with a ? parameter.
- */
 public class TransactionDaoImpl implements TransactionDao {
 
     private static final String COLUMNS = "SELECT t.id, t.account_id, t.reference_id, t.transaction_type, t.amount, t.description, t.created_at FROM transactions t";

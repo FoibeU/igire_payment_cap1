@@ -134,7 +134,7 @@ public class ConsoleApp {
 //        return false;
 //    }
 
-    // ===================================================== MENUS
+    // Services Menu
 
     private void mainMenu() {
         while (true) {
@@ -377,7 +377,7 @@ public class ConsoleApp {
             io.println("Savings rules: min deposit " + Money.format(SavingsAccount.MIN_DEPOSIT)
                     + ", max " + SavingsAccount.MAX_WITHDRAWALS_PER_MONTH
                     + " withdrawals/month, max " + Money.format(SavingsAccount.MAX_SINGLE_WITHDRAWAL)
-                    + " per withdrawal, interst will be  1% (min " + Money.format(SavingsAccount.MIN_INTEREST)
+                    + " per withdrawal, interst will be 2% (min " + Money.format(SavingsAccount.MIN_INTEREST)
                     + "), transfers only to own accounts.");
         } else {
             io.println("Wallet rules: instant transfers to any account, no fees, balance up to 5,000,000.00.");

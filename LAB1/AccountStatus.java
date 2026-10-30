@@ -1,8 +1,5 @@
 package LAB1;
 
-/**
- * ACTIVE accounts can move money. INACTIVE accounts are closed (zero balance) and can be deleted.
- */
 public enum AccountStatus {
 
     ACTIVE("Active"),

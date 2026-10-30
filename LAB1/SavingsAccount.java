@@ -7,19 +7,17 @@ import java.math.RoundingMode;
 import java.time.LocalDateTime;
 import java.util.List;
 
+
 public class SavingsAccount extends Account {
 
     public static final BigDecimal MIN_DEPOSIT = new BigDecimal("500.00");
     public static final BigDecimal MAX_SINGLE_WITHDRAWAL = new BigDecimal("500000.00");
-    public static final int MAX_WITHDRAWALS_PER_MONTH = 3;
-    public static final BigDecimal INTEREST_RATE  = new BigDecimal("0.01");
-    public static final BigDecimal MIN_INTEREST = new BigDecimal("100.00");
-
-    /** Withdrawals + outgoing transfers already made this calendar month (loaded by the DAO). */
+    public static final int MAX_WITHDRAWALS_PER_MONTH = 10;
+    public static final BigDecimal INTEREST_RATE = new BigDecimal("0.02");
+    public static final BigDecimal MIN_INTEREST = new BigDecimal("200.00");
     private int withdrawalsThisMonth;
 
     public SavingsAccount() {
-
         super();
     }
 
@@ -47,7 +45,7 @@ public class SavingsAccount extends Account {
     }
 
     @Override
-    public void withdraw(BigDecimal amount) {
+    public void withdraw(BigDecimal amount, TransactionType type) {
         BigDecimal value = Money.requirePositive(amount);
         if (value.compareTo(MAX_SINGLE_WITHDRAWAL) > 0) {
             throw new TransactionLimitException("A savings withdrawal cannot exceed " + Money.format(MAX_SINGLE_WITHDRAWAL) + ".");
@@ -55,18 +53,26 @@ public class SavingsAccount extends Account {
         if (withdrawalsThisMonth >= MAX_WITHDRAWALS_PER_MONTH) {
             throw new TransactionLimitException("Savings account #" + getId() + " already made " + MAX_WITHDRAWALS_PER_MONTH + " withdrawals this month.");
         }
-        super.withdraw(value);
+        super.withdraw(value, type);   // fee is 0, so balance = balance - amount
         withdrawalsThisMonth++;
     }
 
-//   The calculation of interest on saving account
     @Override
-    public BigDecimal calculateWithdrawalInterest(BigDecimal amount) {
-        BigDecimal interest = amount.multiply(INTEREST_RATE).setScale(Money.SCALE, RoundingMode.HALF_UP);
-        return interest.max(MIN_INTEREST );
+    protected BigDecimal calculateFee(BigDecimal amount, TransactionType type) {
+        return Money.round(BigDecimal.ZERO);
     }
 
-//   The allowed account to accept the saving
+    @Override
+    public BigDecimal calculateWithdrawalInterest(BigDecimal amount) {
+        BigDecimal interest = Money.requirePositive(amount).multiply(INTEREST_RATE).setScale(Money.SCALE, RoundingMode.HALF_UP);
+        return interest.max(MIN_INTEREST);
+    }
+
+    public BigDecimal calculatePayout(BigDecimal amount) {
+        BigDecimal value = Money.requirePositive(amount);
+        return Money.round(value.add(calculateWithdrawalInterest(value)));
+    }
+
     @Override
     public boolean canTransferTo(Account target) {
         return super.canTransferTo(target) && getCustomerId() != null && getCustomerId().equals(target.getCustomerId());
@@ -77,16 +83,23 @@ public class SavingsAccount extends Account {
         return false;
     }
 
-//    The transactions
     @Override
     public List<Transaction> processTransaction(Transaction request) {
         List<Transaction> rows = super.processTransaction(request);
-        rows.stream().filter(t -> t.getTransactionType()
-                == TransactionType.WITHDRAWAL || t.getTransactionType()
-                == TransactionType.TRANSFER_OUT).forEach(t ->
-                t.setDescription(t.getDescription() + " (savings withdrawal "
-                        + withdrawalsThisMonth + "/" + MAX_WITHDRAWALS_PER_MONTH
-                        + " this month)"));
+        for (Transaction t : rows) {
+            if (t.getTransactionType() == TransactionType.WITHDRAWAL) {
+                BigDecimal interest = calculateWithdrawalInterest(t.getAmount());
+                BigDecimal payout = t.getAmount().add(interest);
+                t.setDescription(t.getDescription()
+                        + " withdrawed" + Money.format(t.getAmount())
+                        + " 2% " + Money.format(interest)
+                        + " interest" + Money.format(payout)
+                        + " (on saving " + withdrawalsThisMonth + "/" + MAX_WITHDRAWALS_PER_MONTH + " this month)");
+            } else if (t.getTransactionType() == TransactionType.TRANSFER_OUT) {
+                t.setDescription(t.getDescription()
+                        + " (savings withdrawal " + withdrawalsThisMonth + "/" + MAX_WITHDRAWALS_PER_MONTH + " this month)");
+            }
+        }
         return rows;
     }
 
@@ -104,10 +117,6 @@ public class SavingsAccount extends Account {
 
     @Override
     public String toString() {
-        return "SavingsAccount"
-                + super.toString()
-                + " [withdrawals this month: "
-                + withdrawalsThisMonth + "/"
-                + MAX_WITHDRAWALS_PER_MONTH + "]";
+        return "SavingsAccount" + super.toString() + " [withdrawals this month: " + withdrawalsThisMonth + "/" + MAX_WITHDRAWALS_PER_MONTH + "]";
     }
 }

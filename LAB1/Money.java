@@ -11,7 +11,6 @@ public final class Money {
     public static final int SCALE = 2;
     public static final BigDecimal MAX_AMOUNT = new BigDecimal("1000000000000.00");
 
-//    transaction validation
     public static BigDecimal requirePositive(BigDecimal amount) {
         if (amount == null) {
             throw new InvalidAmountException("Amount is required.");

@@ -12,9 +12,6 @@ import java.sql.Statement;
 import java.util.ArrayList;
 import java.util.List;
 
-/**
- * JDBC implementation of FailedTransactionDao.
- */
 public class FailedTransactionDaoImpl implements FailedTransactionDao {
 
     private static final String COLUMNS = "SELECT id, reference_id, account_id, transaction_type, amount, reason, failed_at FROM failed_transactions";

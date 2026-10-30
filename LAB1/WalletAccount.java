@@ -3,21 +3,16 @@ package LAB1;
 import exception.TransactionLimitException;
 
 import java.math.BigDecimal;
+import java.math.RoundingMode;
 import java.time.LocalDateTime;
 import java.util.List;
 
-/**
- * Mobile-money style wallet.
- * <ul>
- *     <li>Instant transfers to any active account, with no fee.</li>
- *     <li>The balance cannot exceed {@link #MAX_BALANCE}.</li>
- *     <li>Minimum withdrawal is {@link #MIN_WITHDRAWAL}.</li>
- * </ul>
- */
 public class WalletAccount extends Account {
 
     public static final BigDecimal MAX_BALANCE = new BigDecimal("5000000.00");
     public static final BigDecimal MIN_WITHDRAWAL = new BigDecimal("100.00");
+    public static final BigDecimal WITHDRAWAL_FEE_RATE = new BigDecimal("0.10");
+    public static final BigDecimal MAX_WITHDRAWAL_FEE = new BigDecimal("100.00");
 
     public WalletAccount() {
         super();
@@ -36,7 +31,6 @@ public class WalletAccount extends Account {
         return AccountType.WALLET;
     }
 
-    /** Wallets have a balance cap. */
     @Override
     public void deposit(BigDecimal amount) {
         BigDecimal value = Money.requirePositive(amount);
@@ -46,14 +40,27 @@ public class WalletAccount extends Account {
         super.deposit(value);
     }
 
-    /** Wallets have a minimum cash-out amount and no fee. */
     @Override
-    public void withdraw(BigDecimal amount) {
+    public void withdraw(BigDecimal amount, TransactionType type) {
         BigDecimal value = Money.requirePositive(amount);
-        if (value.compareTo(MIN_WITHDRAWAL) < 0) {
+        if (type == TransactionType.WITHDRAWAL && value.compareTo(MIN_WITHDRAWAL) < 0) {
             throw new TransactionLimitException("The minimum wallet withdrawal is " + Money.format(MIN_WITHDRAWAL) + ".");
         }
-        super.withdraw(value);
+        super.withdraw(value, type);
+    }
+
+    @Override
+    public BigDecimal calculateWithdrawalInterest(BigDecimal amount) {
+        BigDecimal fee = amount.multiply(WITHDRAWAL_FEE_RATE).setScale(Money.SCALE, RoundingMode.HALF_UP);
+        return fee.min(MAX_WITHDRAWAL_FEE);
+    }
+
+    @Override
+    protected BigDecimal calculateFee(BigDecimal amount, TransactionType type) {
+        if (type == TransactionType.TRANSFER_OUT) {
+            return Money.round(BigDecimal.ZERO);
+        }
+        return calculateWithdrawalInterest(amount);
     }
 
     @Override

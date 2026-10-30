@@ -1,8 +1,5 @@
 package LAB1;
 
-/**
- * Allowed values of accounts.account_type. Each type maps to its own Account subclass.
- */
 public enum AccountType {
 
     WALLET("Wallet"),

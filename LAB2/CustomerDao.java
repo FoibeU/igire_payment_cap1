@@ -7,10 +7,6 @@ import java.sql.SQLException;
 import java.util.List;
 import java.util.Optional;
 
-/**
- * DAO for the "customers" table. Every method takes the Connection from the LAB3.service layer,
- * so several DAO calls can share one database transaction.
- */
 public interface CustomerDao {
 
     Customer create(Connection connection, Customer customer) throws SQLException;
